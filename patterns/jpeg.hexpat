@@ -75,6 +75,12 @@ struct APP0 {
     Pixel thumbnail[thumbnailX * thumbnailY] [[sealed]];
 };
 
+struct APP2_ICC_Header {
+    type::Magic<"ICC_PROFILE\0"> magic;
+    u8 sequence;
+    u8 total_chunks;
+};
+
 struct APP14 {
     type::Magic<"Adobe"> magic;
     u16 version;
@@ -146,6 +152,9 @@ struct Segment {
             if (marker == Marker::APP0) {
                 APP0 data;
                 u8 xtra_data[length - sizeof(length) - sizeof(data)];
+            } else if (marker == Marker::APP2) {
+                APP2_ICC_Header header;
+                u8 icc_profile_data[length - 16] [[sealed]];
             } else if (marker == Marker::APP14) {
                 APP14 data;
             } else if (marker == Marker::COM) {

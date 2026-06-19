@@ -81,6 +81,66 @@ struct APP2_ICC_Header {
     u8 total_chunks;
 };
 
+struct date_time {
+    u16 year, month, day, hour, minute, second;
+};
+
+struct illuminant {
+    u32 X, Y, Z; //todo: these are incorrect, divide by 65536.0
+};
+
+struct ICC_Header {
+    u32 profile_size;
+    char cmm_type[4];
+    le s32 profile_version; //todo: verify
+    char device_class[4]; //todo: map to name
+    /*
+        device_class_name_dict = {
+        'scnr': 'input',
+        'mntr': 'display',
+        'prtr': 'output',
+        'link': 'device link',
+        'spac': 'colorspace convertion',
+        'abst': 'abstract',
+        'nmcl': 'named color',
+        }*/
+    char color_space[4];
+    char profile_connection_space[4];
+    date_time;
+    char profile_file_signature[4];
+    char primary_platform[4];
+    u32 cmm_flags; //todo, parse
+        //"UseWithEmbeddedDataOnly": false,
+        //"EmbeddedInFile": false
+    char device_manufacturer[4];
+    char device_model[4];
+    u64 device_attributes; //todo parse this struct, map to type?
+        //"MediaColour": "colour","MediaPolarity": "positive","GlossyOrMatte": "glossy","ReflectiveOrTransparency": "reflective"
+    u32 rendering_intent; //todo map to type?
+        //"RenderingIntent": "Perceptual"
+    illuminant;
+    char profile_creator[4];
+    char profile_id[16]; //todo, not a string, but should litarlly read as the hex bytes as is
+    u8 pad[28]; //padding to keep header at 128 bytes
+};
+
+struct ICC_Tag_Entry {
+    char signature[4];
+    u32 offset; // Offset from start of ICC Profile
+    u32 size;
+};
+
+struct ICC_Tag_Table {
+    u32 tag_count;
+    ICC_Tag_Entry entries[tag_count];
+};
+
+struct ICC_Profile_Payload {
+    ICC_Header header;
+    ICC_Tag_Table tag_table;
+    // Note: Actual tag data is located at the 'offset' values in the table.
+};
+
 struct APP14 {
     type::Magic<"Adobe"> magic;
     u16 version;
@@ -154,7 +214,8 @@ struct Segment {
                 u8 xtra_data[length - sizeof(length) - sizeof(data)];
             } else if (marker == Marker::APP2) {
                 APP2_ICC_Header header;
-                u8 icc_profile_data[length - 16] [[sealed]];
+                //u8 icc_profile_data[length - 16] [[sealed]];
+                ICC_Profile_Payload data;
             } else if (marker == Marker::APP14) {
                 APP14 data;
             } else if (marker == Marker::COM) {

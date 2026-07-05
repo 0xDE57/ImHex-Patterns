@@ -125,7 +125,7 @@ struct ICC_Header {
 };
 
 struct ICC_Tag_Entry {
-    char signature[4];
+    char tag[4];
     u32 offset; // Offset from start of ICC Profile
     u32 size;
 };
